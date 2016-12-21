@@ -4,7 +4,6 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.FrameLayout;
@@ -72,11 +71,8 @@ public class HistoryActivity extends AppCompatActivity implements OnHistoryItemC
     }
 
     private void showDiagramFragment(String historyKey) {
-        Log.d(TAG, "showDiagramFragment: " + historyKey);
-        ArrayList<Coordinates> coordinatesList = mCoordinatesHistory.get(historyKey);
-
         Bundle bundle = new Bundle();
-        bundle.putParcelableArrayList(Constants.BUNDLE_COORDINATES_LIST, coordinatesList);
+        bundle.putString(Constants.BUNDLE_HISTORY_KEY, historyKey);
 
         FrameLayout container = (FrameLayout) findViewById(R.id.flDiagramContainerAH);
 

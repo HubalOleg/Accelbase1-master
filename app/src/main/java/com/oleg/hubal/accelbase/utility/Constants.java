@@ -11,6 +11,7 @@ public class Constants {
 
     public static final String BUNDLE_EDIT_TEXT_DELAY = "delay";
     public static final String BUNDLE_COORDINATES_LIST = "coordinates_list";
+    public static final String BUNDLE_HISTORY_KEY = "coordinate_key";
 
     public static final String X = "x: ";
     public static final String Y = "y: ";
