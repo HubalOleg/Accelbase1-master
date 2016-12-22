@@ -58,8 +58,7 @@ public class HistoryActivity extends AppCompatActivity implements OnHistoryItemC
             case R.id.menu_load_audio:
                 getSupportFragmentManager()
                         .beginTransaction()
-                        .add(R.id.flFragmentContainer, new LoadAudioFragment())
-                        .addToBackStack(null)
+                        .replace(R.id.flFragmentContainer, new LoadAudioFragment())
                         .commit();
                 return true;
             default:
@@ -125,5 +124,11 @@ public class HistoryActivity extends AppCompatActivity implements OnHistoryItemC
                     }
                 }
         );
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
     }
 }

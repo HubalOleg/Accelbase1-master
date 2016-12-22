@@ -2,8 +2,10 @@ package com.oleg.hubal.accelbase.fragment;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -25,6 +27,8 @@ import com.google.firebase.storage.UploadTask;
 import com.oleg.hubal.accelbase.R;
 
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static android.app.Activity.RESULT_OK;
 import static android.content.Context.MODE_PRIVATE;
@@ -35,15 +39,45 @@ import static android.content.Context.MODE_PRIVATE;
 
 public class LoadAudioFragment extends Fragment {
 
-    private static final String KEY_PREF_AUDIO_PATH = "AUDIO_PATH";
-    private static final String KEY_PREF_SESSION_URI = "SESSION_URI";
+    public static final String SHARED_PREFERENCES = "LOAD_AUDIO_PREF";
+
+    public static final String KEY_PREF_AUDIO_PATH = "AUDIO_PATH";
+    public static final String KEY_PREF_SESSION_URI = "SESSION_URI";
 
     private static final String TAG = "LoadAudioFragment";
-
-    private boolean isSaved = false;
+    public static final int REQUEST_CODE_AUDIO = 1;
 
     private ProgressBar mProgressBar;
     private UploadTask mUploadTask;
+    private Uri mSessionUri;
+    private String mPath;
+
+    private OnSuccessListener<UploadTask.TaskSnapshot> mOnSuccessListener = new OnSuccessListener<UploadTask.TaskSnapshot>() {
+        @Override
+        public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+            mProgressBar.setVisibility(View.GONE);
+            mSessionUri = null;
+            saveAudioPath("");
+            saveSessionUri(Uri.EMPTY);
+        }
+    };
+
+    private OnProgressListener<UploadTask.TaskSnapshot> mOnProgressListener = new OnProgressListener<UploadTask.TaskSnapshot>() {
+        @Override
+        public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
+            mSessionUri = taskSnapshot.getUploadSessionUri();
+            double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
+            Log.d(TAG, "onProgress: " + progress);
+        }
+    };
+
+    private OnFailureListener mOnFailureListener = new OnFailureListener() {
+        @Override
+        public void onFailure(@NonNull Exception e) {
+            Log.d(TAG, "onFailure: ");
+        }
+    };
+
 
     @Nullable
     @Override
@@ -52,14 +86,13 @@ public class LoadAudioFragment extends Fragment {
 
         mProgressBar = (ProgressBar) view.findViewById(R.id.pb_loading_audio);
 
-        SharedPreferences sPref = getActivity().getPreferences(MODE_PRIVATE);
+        SharedPreferences sPref = getActivity().getApplication().getSharedPreferences(SHARED_PREFERENCES, MODE_PRIVATE);
         String audioPath = sPref.getString(KEY_PREF_AUDIO_PATH, "");
         String sessionString = sPref.getString(KEY_PREF_SESSION_URI, "");
 
         if (!TextUtils.isEmpty(audioPath) && !TextUtils.isEmpty(sessionString)) {
-            Uri audioUri = Uri.parse(audioPath);
             Uri sessionUri = Uri.parse(sessionString);
-            loadAudio(audioUri, sessionUri);
+            uploadAudio(audioPath, sessionUri);
         } else {
             getAudioFile();
         }
@@ -71,17 +104,14 @@ public class LoadAudioFragment extends Fragment {
         Intent intentAudio = new Intent();
         intentAudio.setType("audio/*");
         intentAudio.setAction(Intent.ACTION_GET_CONTENT);
-        startActivityForResult(intentAudio, 1);
+        startActivityForResult(intentAudio, REQUEST_CODE_AUDIO);
     }
 
-    private void loadAudio(Uri audioUri, Uri sessionUri) {
-        SharedPreferences pref = getActivity().getPreferences(MODE_PRIVATE);
-        SharedPreferences.Editor editor = pref.edit();
-        editor.putString(KEY_PREF_AUDIO_PATH, audioUri.toString());
-        editor.apply();
+    private void uploadAudio(String path, Uri sessionUri) {
+        mPath = path;
+        Uri audioUri = Uri.fromFile(new File(path));
 
-        File file = new File(audioUri.getPath());
-        String fileName = file.getName();
+        String fileName = path.substring(path.lastIndexOf("/") + 1);
 
         StorageMetadata metadata = new StorageMetadata.Builder()
                 .setContentType("audio/mpeg")
@@ -89,51 +119,61 @@ public class LoadAudioFragment extends Fragment {
 
         String uId = FirebaseAuth.getInstance().getCurrentUser().getUid();
         StorageReference storageReference = FirebaseStorage.getInstance().getReference();
-        StorageReference audioReference = storageReference.child("audio").child(uId).child(fileName + ".mp3");
+        StorageReference audioReference = storageReference.child("audio").child(uId).child(fileName);
 
         if (TextUtils.isEmpty(sessionUri.toString())) {
             mUploadTask = audioReference.putFile(audioUri, metadata);
         } else {
             mUploadTask = audioReference.putFile(audioUri, metadata, sessionUri);
         }
-        mUploadTask.addOnFailureListener(
-                new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d(TAG, "onFailure: ");
-                    }
-                }).addOnSuccessListener(
-                new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        isSaved = true;
-                        Log.d(TAG, "onSuccess: ");
-                        mProgressBar.setVisibility(View.GONE);
-                        SharedPreferences pref = getActivity().getPreferences(MODE_PRIVATE);
-                        SharedPreferences.Editor editor = pref.edit();
-                        editor.putString(KEY_PREF_AUDIO_PATH, "");
-                        editor.putString(KEY_PREF_SESSION_URI, "");
-                        editor.apply();
-                    }
-                }).addOnProgressListener(
-                new OnProgressListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onProgress(UploadTask.TaskSnapshot taskSnapshot) {
-                        Uri sessionUri = taskSnapshot.getUploadSessionUri();
-                        Log.d(TAG, "onProgress: " + sessionUri);
-                        double progress = (100.0 * taskSnapshot.getBytesTransferred()) / taskSnapshot.getTotalByteCount();
-                        Log.d(TAG, "onProgress: " + progress);
-                        if (sessionUri != null) {
-                            if (getActivity() != null) {
-                                SharedPreferences pref = getActivity().getPreferences(MODE_PRIVATE);
-                                SharedPreferences.Editor editor = pref.edit();
-                                editor.putString(KEY_PREF_SESSION_URI, sessionUri.toString());
-                                editor.apply();
-                            }
-                        }
-                    }
-                }
-        );
+
+        mUploadTask.addOnFailureListener(mOnFailureListener)
+                .addOnSuccessListener(mOnSuccessListener)
+                .addOnProgressListener(mOnProgressListener);
+    }
+
+    private String getRealPathFromDocumentUri(Uri uri){
+        String filePath = "";
+
+        Pattern p = Pattern.compile("(\\d+)$");
+        Matcher m = p.matcher(uri.toString());
+        if (!m.find()) {
+            return filePath;
+        }
+        String audioId = m.group();
+
+        String[] column = { MediaStore.Audio.Media.DATA };
+        String sel = MediaStore.Audio.Media._ID + "=?";
+
+        Cursor cursor = getContext().getContentResolver().query(MediaStore.Audio.Media.EXTERNAL_CONTENT_URI,
+                column, sel, new String[]{ audioId }, null);
+
+        int columnIndex = cursor.getColumnIndex(column[0]);
+
+        if (cursor.moveToFirst()) {
+            filePath = cursor.getString(columnIndex);
+        }
+        cursor.close();
+
+        return filePath;
+    }
+
+    private void saveAudioPath(String path) {
+        if (getActivity() != null) {
+            SharedPreferences pref = getActivity().getApplication().getSharedPreferences(SHARED_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putString(KEY_PREF_AUDIO_PATH, path);
+            editor.apply();
+        }
+    }
+
+    private void saveSessionUri(Uri sessionUri) {
+        if (getActivity() != null) {
+            SharedPreferences pref = getActivity().getApplication().getSharedPreferences(SHARED_PREFERENCES, MODE_PRIVATE);
+            SharedPreferences.Editor editor = pref.edit();
+            editor.putString(KEY_PREF_SESSION_URI, sessionUri.toString());
+            editor.apply();
+        }
     }
 
     @Override
@@ -141,6 +181,12 @@ public class LoadAudioFragment extends Fragment {
         super.onPause();
         if (mUploadTask != null && mUploadTask.isInProgress()) {
             mUploadTask.pause();
+        }
+        if (mSessionUri == null) {
+            saveSessionUri(Uri.EMPTY);
+        } else {
+            saveSessionUri(mSessionUri);
+            saveAudioPath(mPath);
         }
     }
 
@@ -150,8 +196,9 @@ public class LoadAudioFragment extends Fragment {
 
         if (requestCode == 1) {
             if (resultCode == RESULT_OK) {
-                Uri uri = data.getData();
-                loadAudio(uri, Uri.EMPTY);
+                Uri audioUri = data.getData();
+                String path = getRealPathFromDocumentUri(audioUri);
+                uploadAudio(path, Uri.EMPTY);
             }
         }
     }
