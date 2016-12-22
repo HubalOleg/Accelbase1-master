@@ -12,6 +12,7 @@ import android.widget.ImageView;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.oleg.hubal.accelbase.R;
@@ -41,8 +42,10 @@ public class DiagramFragment extends Fragment {
 
         mCoordinatesDiagramImageView = (ImageView) view.findViewById(R.id.iv_coordinate_diagram);
 
+        String uId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
         StorageReference storageReference = FirebaseStorage.getInstance().getReference();
-        StorageReference imageRef = storageReference.child("images").child(mHistoryKey + ".jpg");
+        StorageReference imageRef = storageReference.child("images").child(uId).child(mHistoryKey + ".jpg");
 
         imageRef.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
             @Override

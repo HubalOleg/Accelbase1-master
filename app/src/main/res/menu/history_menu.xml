@@ -6,4 +6,9 @@
         android:icon="@android:drawable/ic_menu_compass"
         android:title="@string/accelerometer"
         app:showAsAction="always" />
+    <item android:id="@+id/menu_load_audio"
+        android:icon="@android:drawable/ic_menu_report_image"
+        android:title="@string/load_audio"
+        app:showAsAction="always"/>
+
 </menu>

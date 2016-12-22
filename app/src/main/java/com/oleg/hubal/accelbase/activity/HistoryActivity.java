@@ -17,6 +17,7 @@ import com.google.firebase.database.ValueEventListener;
 import com.oleg.hubal.accelbase.R;
 import com.oleg.hubal.accelbase.fragment.DiagramFragment;
 import com.oleg.hubal.accelbase.fragment.HistoryFragment;
+import com.oleg.hubal.accelbase.fragment.LoadAudioFragment;
 import com.oleg.hubal.accelbase.listener.OnHistoryItemClickListener;
 import com.oleg.hubal.accelbase.model.Coordinates;
 import com.oleg.hubal.accelbase.utility.Constants;
@@ -53,6 +54,13 @@ public class HistoryActivity extends AppCompatActivity implements OnHistoryItemC
         switch (item.getItemId()) {
             case R.id.menu_accelerometer:
                 startActivity(new Intent(this, MainActivity.class));
+                return true;
+            case R.id.menu_load_audio:
+                getSupportFragmentManager()
+                        .beginTransaction()
+                        .add(R.id.flFragmentContainer, new LoadAudioFragment())
+                        .addToBackStack(null)
+                        .commit();
                 return true;
             default:
                 return false;

@@ -5,14 +5,13 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.util.Log;
 
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
@@ -21,8 +20,6 @@ import com.oleg.hubal.accelbase.utility.Constants;
 import com.oleg.hubal.accelbase.utility.Utility;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -59,28 +56,7 @@ public class StoreBitmapTask extends AsyncTask<Void, Void, Void> {
     @Override
     protected Void doInBackground(Void... params) {
         Bitmap bitmap = createBitmapDiagram();
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-//        bitmap.recycle();
-        byte[] byteArray = outputStream.toByteArray();
-
-        StorageReference storageReference = FirebaseStorage.getInstance().getReference();
-        StorageReference imageRef = storageReference.child("images").child(String.valueOf(mCurrTime) + ".jpg");
-
-        UploadTask uploadTask = imageRef.putBytes(byteArray);
-        uploadTask.addOnFailureListener(
-                new OnFailureListener() {
-                    @Override
-                    public void onFailure(@NonNull Exception e) {
-                        Log.d(TAG, "onFailure: ");
-                    }
-                })
-                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-                    @Override
-                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                        Log.d(TAG, "onSuccess: ");
-                    }
-                });
+        saveBitmapToStorage(bitmap);
 
         return null;
     }
@@ -104,25 +80,31 @@ public class StoreBitmapTask extends AsyncTask<Void, Void, Void> {
         return bitmap;
     }
 
-    private Uri saveBitmapToStorage(Bitmap bitmap) {
-        String root = Environment.getExternalStorageDirectory().toString();
-        File myDir = new File(root + "req_images");
-        myDir.mkdirs();
-        String fileName = mCurrTime + ".jpg";
-        File file = new File(myDir, fileName);
-        if (file.exists())
-            file.delete();
+    private void saveBitmapToStorage(Bitmap bitmap) {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
+        bitmap.recycle();
+        byte[] byteArray = outputStream.toByteArray();
 
-        try {
-            FileOutputStream out = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out);
-            out.flush();
-            out.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        Uri uri = Uri.fromFile(file);
-        return uri;
+        String uId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+
+        StorageReference storageReference = FirebaseStorage.getInstance().getReference();
+        StorageReference imageRef = storageReference.child("images").child(uId).child(String.valueOf(mCurrTime) + ".jpg");
+
+        UploadTask uploadTask = imageRef.putBytes(byteArray);
+        uploadTask.addOnFailureListener(
+                new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        Log.d(TAG, "onFailure: ");
+                    }
+                })
+                .addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+                    @Override
+                    public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                        Log.d(TAG, "onSuccess: ");
+                    }
+                });
     }
 
     private void getCoordinatesData() {
@@ -172,7 +154,7 @@ public class StoreBitmapTask extends AsyncTask<Void, Void, Void> {
     }
 
     private void getUnitSizes() {
-        mHorizontalUnitSize = mWidth / mCoordinatesList.size();
+        mHorizontalUnitSize = mWidth / (mCoordinatesList.size() + 1);
         mVerticalUnitSize = mHeight / (mCoorDifference);
     }
 
@@ -181,7 +163,7 @@ public class StoreBitmapTask extends AsyncTask<Void, Void, Void> {
         paint.setColor(Color.RED);
         paint.setStrokeWidth(3);
         paint.setAlpha(40);
-        for (int i = 1; i < mCoordinatesList.size(); i++) {
+        for (int i = 1; i <= mCoordinatesList.size(); i++) {
             int coorX = mHorizontalUnitSize * i;
             mCanvas.drawLine(coorX, 0, coorX, mHeight, paint);
         }

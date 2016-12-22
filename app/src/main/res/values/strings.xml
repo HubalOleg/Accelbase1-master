@@ -45,4 +45,5 @@
     <string name="error_internet">Connect the internet</string>
 
     <string name="facebook_app_id">364853600535869</string>
+    <string name="load_audio">Load audio</string>
 </resources>
