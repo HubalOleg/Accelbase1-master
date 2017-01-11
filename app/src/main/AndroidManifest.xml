@@ -35,7 +35,21 @@
             android:screenOrientation="portrait"/>
         <service android:name=".service.AccelerometerService"
             android:exported="false" />
+        <service android:name=".service.CloudMessagingService">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
+            </intent-filter>
+        </service>
+        <service android:name=".service.CloudMessagingIDService">
+            <intent-filter>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT" />
+            </intent-filter>
+        </service>
         <meta-data android:name="com.facebook.sdk.ApplicationId" android:value="@string/facebook_app_id" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_icon"
+                   android:resource="@android:drawable/ic_dialog_email" />
+        <meta-data android:name="com.google.firebase.messaging.default_notification_color"
+                   android:resource="@color/colorAccent" />
     </application>
 
 </manifest>
