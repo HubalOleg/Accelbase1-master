@@ -25,11 +25,16 @@ import java.net.URL;
 public class CloudMessagingService extends FirebaseMessagingService {
 
     private static final String TAG = "CloudMessagingService";
+    public static final String KEY_NOTIF_ANOTHER_ACTIVITY = "another_activity";
+    public static final String KEY_NOTIF_TITLE = "title";
+    public static final String KEY_NOTIF_IMAGE = "imageUrl";
+    public static final String KEY_NOTIF_BODY = "body";
+    public static final String VALUE_TRUE = "true";
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        Bitmap image = getBitmapfromUrl(remoteMessage.getData().get("imageUrl"));
+        Bitmap image = getBitmapFromUrl(remoteMessage.getData().get(KEY_NOTIF_IMAGE));
 
         sendNotification(remoteMessage, image);
     }
@@ -37,7 +42,7 @@ public class CloudMessagingService extends FirebaseMessagingService {
     private void sendNotification(RemoteMessage remoteMessage, Bitmap image) {
         Intent intent;
 
-        if (remoteMessage.getData().get("another_activity").equals("true")) {
+        if (remoteMessage.getData().get(KEY_NOTIF_ANOTHER_ACTIVITY).equals(VALUE_TRUE)) {
             intent = new Intent(CloudMessagingService.this, HistoryActivity.class);
         } else {
             intent = new Intent(CloudMessagingService.this, MainActivity.class);
@@ -49,8 +54,8 @@ public class CloudMessagingService extends FirebaseMessagingService {
 
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(CloudMessagingService.this)
                 .setSmallIcon(android.R.drawable.ic_dialog_email)
-                .setContentTitle(remoteMessage.getData().get("title"))
-                .setContentText(remoteMessage.getData().get("body"))
+                .setContentTitle(remoteMessage.getData().get(KEY_NOTIF_TITLE))
+                .setContentText(remoteMessage.getData().get(KEY_NOTIF_BODY))
                 .setAutoCancel(true)
                 .setStyle(new NotificationCompat.BigPictureStyle()
                         .bigPicture(image))
@@ -62,7 +67,7 @@ public class CloudMessagingService extends FirebaseMessagingService {
         notificationManager.notify(0, notificationBuilder.build());
     }
 
-    public Bitmap getBitmapfromUrl(String imageUrl) {
+    public Bitmap getBitmapFromUrl(String imageUrl) {
         try {
             URL url = new URL(imageUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
