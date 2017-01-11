@@ -47,4 +47,5 @@
     <string name="facebook_app_id">364853600535869</string>
     <string name="load_audio">Load audio</string>
     <string name="notification_body">"Message body: "</string>
+    <string name="menu_screenshot">Screenshot</string>
 </resources>

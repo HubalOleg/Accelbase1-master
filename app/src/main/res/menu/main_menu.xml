@@ -10,4 +10,8 @@
         android:icon="@android:drawable/ic_lock_power_off"
         android:title="@string/sign_out"
         app:showAsAction="always"/>
+    <item android:id="@+id/menu_screenshot"
+          android:icon="@android:drawable/ic_menu_gallery"
+          android:title="@string/menu_screenshot"
+          app:showAsAction="always"/>
 </menu>
