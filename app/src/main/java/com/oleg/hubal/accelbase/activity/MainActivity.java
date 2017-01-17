@@ -47,12 +47,12 @@ public class MainActivity extends AppCompatActivity {
         auth = FirebaseAuth.getInstance();
 
         if (auth.getCurrentUser() == null) {
-            FirebaseMessaging.getInstance().subscribeToTopic(FIREBASE_TOPIC);
             startActivity(new Intent(getApplication(), SignupActivity.class));
             finish();
         }
 
         if (savedInstanceState == null) {
+            FirebaseMessaging.getInstance().subscribeToTopic("some_topic");
             AccelerometerFragment accelerometerFragment = new AccelerometerFragment();
             FragmentManager fragmentManager = getSupportFragmentManager();
             fragmentManager.beginTransaction()

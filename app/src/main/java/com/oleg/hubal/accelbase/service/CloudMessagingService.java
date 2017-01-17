@@ -5,18 +5,18 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.support.v4.app.NotificationCompat;
+import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.oleg.hubal.accelbase.R;
 import com.oleg.hubal.accelbase.activity.HistoryActivity;
 import com.oleg.hubal.accelbase.activity.MainActivity;
+import com.oleg.hubal.accelbase.utility.Utility;
 
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by User on 11.01.2017.
@@ -34,9 +34,15 @@ public class CloudMessagingService extends FirebaseMessagingService {
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
         super.onMessageReceived(remoteMessage);
-        Bitmap image = getBitmapFromUrl(remoteMessage.getData().get(KEY_NOTIF_IMAGE));
 
-        sendNotification(remoteMessage, image);
+        Map<String, String> map = remoteMessage.getData();
+        Set<String> set = map.keySet();
+        for (String s : set) {
+            Log.d(TAG, "onMessageReceived: " + map.get(s));
+        }
+
+        Bitmap image = Utility.getBitmapFromUrl(remoteMessage.getData().get(KEY_NOTIF_IMAGE));
+//        sendNotification(remoteMessage, image);
     }
 
     private void sendNotification(RemoteMessage remoteMessage, Bitmap image) {
@@ -67,21 +73,5 @@ public class CloudMessagingService extends FirebaseMessagingService {
         notificationManager.notify(0, notificationBuilder.build());
     }
 
-    public Bitmap getBitmapFromUrl(String imageUrl) {
-        try {
-            URL url = new URL(imageUrl);
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setDoInput(true);
-            connection.connect();
-            InputStream input = connection.getInputStream();
-            Bitmap bitmap = BitmapFactory.decodeStream(input);
-            return bitmap;
 
-        } catch (Exception e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-            return null;
-
-        }
-    }
 }
